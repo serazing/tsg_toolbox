@@ -5,7 +5,7 @@ import pandas as pd
 
 
 @numba.jit
-def _alongtrack_filter(data, mask, time, lon, lat, cutoff=10e3, 
+def _shiptrack_filter(data, mask, time, lon, lat, cutoff=10e3, 
                       win_dt=1., max_break=0.5):
     """
     Private low-level function written using numba to speed-up the computation
@@ -47,7 +47,7 @@ def _alongtrack_filter(data, mask, time, lon, lat, cutoff=10e3,
     for ic in range(1, nobs - 1):
         # Reference point at the center of the window
         t_ref, lon_ref, lat_ref = time[ic], lon[ic], lat[ic] 
-        rossby_ref = rossby[ic] 
+        #rossby_ref = rossby[ic] 
         # Next data point: r for "right"
         jr = ic + 1
         dist_r = distance(lon_ref, lat_ref, lon[jr], lat[jr])
@@ -92,7 +92,7 @@ def _alongtrack_filter(data, mask, time, lon, lat, cutoff=10e3,
     return data_meso
 
 
-def alongtrack_filter(data, cutoff=10e3, win_dt=1, max_break=0.5):
+def shiptrack_filter(data, cutoff=10e3, win_dt=1, max_break=0.5):
     """
     Perform a gaussian filter based on the local deformation radius to 
     remove scales smaller than mesoscale motions
@@ -107,12 +107,10 @@ def alongtrack_filter(data, cutoff=10e3, win_dt=1, max_break=0.5):
     data_meso : xr.DataArray
         Data filtered to retain only mesoscale variations
     """
-    #mean_rossby = get_mean_rossby_radius(ds, data_rossby)
-    #print(mean_rossby)
     mask = 1. - np.isnan(data)
     data_filled = np.nan_to_num(data)
-    res = _mesoscale_filter(data_filled, mask.data, pd.to_numeric(data['time'].data), 
-                            data['lon'].data, data['lat'].data, data_rossby.data,
+    res = _shiptrack_filter(data_filled, mask.data, pd.to_numeric(data['time'].data),
+                            data['lon'].data, data['lat'].data, cutoff=cutoff,
                             win_dt=win_dt, max_break=max_break)
     data_meso = xr.DataArray(res, 
                              name=data.name + '_ME', 

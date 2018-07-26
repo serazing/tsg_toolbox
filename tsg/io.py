@@ -6,7 +6,9 @@ from pandas.errors import OutOfBoundsDatetime
 import numpy as np
 
 
-def check_data(ds, max_SST_rate=10, max_SSS_rate=5, drop=True):   
+def check_data(ds, max_SST_rate=10, max_SSS_rate=5, drop=True):
+    # Sort by time to avoid strange behaviours
+    ds = ds.sortby('time')
     #Remove duplicated time values
     ds = ds.sel(time=~ds.indexes['time'].duplicated())
     # Uniformize the longitude coordinates to be between 0 and 360
@@ -38,9 +40,7 @@ def open_tsg_from_legos(filename):
             .rename(renamed_var)
             .set_coords(('lon', 'lat'))
          )
-    ds['lon'] = (ds['lon'] + 360) % 360
-    # Sort by time to avoid strange behaviours
-    ds = ds.sortby('time')
+    ds = check_data(ds)
     for var in ds.variables:
         try:
             del(ds[var].attrs['coordinates'])
@@ -93,15 +93,11 @@ def open_tsg_from_gosud(filename, quality=None, drop=True):
     if quality is 'good':
         new_ds = new_ds.where(new_ds['SSS_QC'] == 1, drop=drop)
         new_ds = new_ds.where(new_ds['SST_QC'] == 1, drop=drop)
-        #new_ds['SSS'] = new_ds['SSS'].where(new_ds['SSS_QC'] == 1, drop=drop)
-        #new_ds['SST'] = new_ds['SST'].where(new_ds['SST_QC'] == 1, drop=drop)
     elif quality is 'probably_good':
         new_ds = new_ds.where((new_ds['SSS_QC'] == 1) | 
                               (new_ds['SSS_QC'] == 2), drop=drop)
         new_ds = new_ds.where((new_ds['SST_QC'] == 1) | 
                               (new_ds['SST_QC'] == 2), drop=drop)
-        #new_ds['SSS'] = new_ds['SSS'].where((new_ds['SSS_QC'] == 1) | (new_ds['SSS_QC'] == 2), drop=drop)
-        #new_ds['SST'] = new_ds['SST'].where((new_ds['SST_QC'] == 1) | (new_ds['SST_QC'] == 2), drop=drop)
     new_ds.attrs = ds.attrs
     new_ds = check_data(new_ds, drop=drop)
     return new_ds    
