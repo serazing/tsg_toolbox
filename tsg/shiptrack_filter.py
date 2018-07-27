@@ -20,8 +20,8 @@ def _shiptrack_filter(data, mask, time, lon, lat, cutoff=10e3,
         Longitudinal coordinates 
     lat : 1darray
         Latitudinal coordinates 
-    rossby : 1darray
-        Rossby radius
+    cutoff : 1darray
+        Cutoff wave period
     
     Returns
     -------
@@ -36,18 +36,16 @@ def _shiptrack_filter(data, mask, time, lon, lat, cutoff=10e3,
         dx = (np.cos(np.pi / 180. * lat2) * np.pi / 180. * EARTH_RADIUS * dlon)
         distance = (dx ** 2 + dy ** 2 ) ** 0.5
         return distance
-
+    
+    cutoff /= (2 * np.pi) # Scale the cutoff as a wavelength
     nobs = len(data) # Total number of observation
     data_meso = np.zeros(nobs) # Initialize outputs
-    # Loop on every data point
     max_break *= (3600 * 1e9)
-    win_dt *= (3600 * 24 * 1e9)
-    
+    win_dt *= (3600 * 24 * 1e9)    
     # Loop on every data point
     for ic in range(1, nobs - 1):
         # Reference point at the center of the window
-        t_ref, lon_ref, lat_ref = time[ic], lon[ic], lat[ic] 
-        #rossby_ref = rossby[ic] 
+        t_ref, lon_ref, lat_ref = time[ic], lon[ic], lat[ic]
         # Next data point: r for "right"
         jr = ic + 1
         dist_r = distance(lon_ref, lat_ref, lon[jr], lat[jr])
